@@ -61,7 +61,7 @@ function getComputerData(time,callback){
 
 }
 
-getComputerData(3000,function (info) {
+getComputerData(1000,function (info) {
     console.log("output " + JSON.stringify(info))
     console.log()
 })

@@ -22,8 +22,8 @@ class HostReceiver {
         let freemem = os.freemem() / (1024 * 1024 * 1024)
         let usedmem = totalmem - freemem
         // 单位 GB
-        this.output["totalmem"] = totalmem.toFixed(1)
-        this.output["freemem"] = freemem.toFixed(1)
+        // this.output["totalmem"] = totalmem.toFixed(1)
+        // this.output["freemem"] = freemem.toFixed(1)
         this.output["usedmem"] = usedmem.toFixed(1)
 
         let second = Date.now() - this.timeStampOld
@@ -31,15 +31,19 @@ class HostReceiver {
         // 单位 B/s
         let netRawNew = netStat.raw()
         for (let i = 0; i < this.netKeys.length; i++) {
-            this.output[this.netKeys[i] + " Receive"] = ((netRawNew[this.netKeys[i]].bytes.receive - this.netRawOld[this.netKeys[i]].bytes.receive)/second).toFixed(2)
-            this.output[this.netKeys[i] + " Send"] = ((netRawNew[this.netKeys[i]].bytes.transmit - this.netRawOld[this.netKeys[i]].bytes.transmit)/second).toFixed(2)
+            let kR = this.netKeys[i] + "Receive"
+            let kS = this.netKeys[i] + "Send"
+            this.output[kR] = ((netRawNew[this.netKeys[i]].bytes.receive - this.netRawOld[this.netKeys[i]].bytes.receive)/second).toFixed(2)
+            this.output[kS] = ((netRawNew[this.netKeys[i]].bytes.transmit - this.netRawOld[this.netKeys[i]].bytes.transmit)/second).toFixed(2)
         }
         // 磁盘IO
         // 单位 次/秒
         let diskRawNew = diskStat.raw();
         for (let i = 0; i < this.diskKeys.length; i++) {
-            this.output[this.diskKeys[i] + " Read "] = ((diskRawNew[this.diskKeys[i]].readsCompleted - this.diskRawOld[this.diskKeys[i]].readsCompleted)/second).toFixed(2)
-            this.output[this.diskKeys[i] + " Write "] = ((diskRawNew[this.diskKeys[i]].writesCompleted - this.diskRawOld[this.diskKeys[i]].writesCompleted)/second).toFixed(2)
+            let kR = this.netKeys[i] + "Read"
+            let kS = this.netKeys[i] + "Write"
+            this.output[kR] = ((diskRawNew[this.diskKeys[i]].readsCompleted - this.diskRawOld[this.diskKeys[i]].readsCompleted)/second).toFixed(2)
+            this.output[kS] = ((diskRawNew[this.diskKeys[i]].writesCompleted - this.diskRawOld[this.diskKeys[i]].writesCompleted)/second).toFixed(2)
         }
         // CPU使用率
         // 单位 %
@@ -55,15 +59,15 @@ class HostReceiver {
             userAmount += (user_pass / (amountNew - amountOld))
             sysAmount += (system_pass / (amountNew - amountOld))
         }
-        this.output["userCpu"] = (userAmount / cpusLen * 100).toFixed(2)
-        this.output["coreCpu"] = (sysAmount / cpusLen * 100).toFixed(2)
+        // this.output["userCpu"] = (userAmount / cpusLen * 100).toFixed(2)
+        // this.output["coreCpu"] = (sysAmount / cpusLen * 100).toFixed(2)
         this.output["allCpu"] = ((userAmount / cpusLen + sysAmount / cpusLen) * 100).toFixed(2)
 
 
         this.netRawOld = netRawNew
         this.diskRawOld = diskRawNew
         this.cpusOld = cpusNew
-        return this.output
+        return Promise.resolve(this.output)
     }
 }
 

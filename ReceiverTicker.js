@@ -1,19 +1,11 @@
-let {HostReceiver} = require('./HostReceiver');
-const http = require('http')
-
-const options = {
-    hostname: 'localhost',
-    port: 8081,
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-    }
-};
+let {HostReceiver} = require('./watcher/HostReceiver');
+let {SqlReceiver} = require('./watcher/SqlReceiver');
+let clientPostData = require('./Client');
 
 class ReceiverTicker {
     constructor() {
         this.receivers = []
-        this.output = {}
+        this.open = true
     }
 
     addReceiver(rec) {
@@ -22,34 +14,44 @@ class ReceiverTicker {
 
     tick(time) {
         let _this = this
-        setInterval(function () {
-            _this.receivers.forEach(function (value) {
-                _this.output[value.receiverName] = value.receive()
-                // console.log(_this.output)
 
-                const postData = JSON.stringify(_this.output)
-                const req = http.request(options, (res) => {
-                    console.log(`状态码: ${res.statusCode}`);
-                    res.setEncoding('utf8')
-                });
-
-                req.on('error', (e) => {
-                    console.error(`请求遇到问题: ${e.message}`);
-                });
-
-                req.write(postData);
-                req.end();
+        let a = setInterval(function () {
+            const output = {};
+            const promises = [];
+            _this.receivers.forEach(function (receiver) {
+                promises.push(
+                    receiver.receive().then(result => {
+                        return {
+                            name: receiver.receiverName,
+                            result: result
+                        }
+                    })
+                )
             })
+            Promise.all(promises).then((result) => {
+                result.forEach(v => {
+                    output[v.name] = v.result
+                })
+            }).then(()=>{
+                clientPostData(output)
+            })
+
+
+            // 关闭数据库
+            if (!_this.open) {
+                clearInterval(a)
+                // sql end
+
+            }
         }, time)
+
+
     }
 }
 
 let h = new HostReceiver()
+let s = new SqlReceiver()
 let r = new ReceiverTicker()
 r.addReceiver(h)
-r.tick(3000)
-
-
-
-
-
+r.addReceiver(s)
+r.tick(1000)

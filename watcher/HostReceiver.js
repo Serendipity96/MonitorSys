@@ -63,7 +63,6 @@ class HostReceiver {
         // this.output["coreCpu"] = (sysAmount / cpusLen * 100).toFixed(2)
         this.output["allCpu"] = ((userAmount / cpusLen + sysAmount / cpusLen) * 100).toFixed(2)
 
-
         this.netRawOld = netRawNew
         this.diskRawOld = diskRawNew
         this.cpusOld = cpusNew

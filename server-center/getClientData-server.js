@@ -14,14 +14,16 @@ connection.connect();
 http.createServer(function (req, res) {
     if(req.method === 'POST'){
         req.on('data', chunk => {
-            // console.log(`DATA: ${chunk}`);
 
             //处理数据
             let data = JSON.parse(chunk)
+            // console.log(data);
             let host = data["host"]
 
-            let  addSql = 'INSERT INTO hostData(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,hostId) VALUES(0,?,?,?,?,?,?,?)';
-            let  addSqlParams = [host.allCpu,host.usedmem,1,1,1,1,1];
+            // hostiId 假设为1
+            let timeStamp = (Math.round(new Date().getTime()/1000))
+            let  addSql = 'INSERT INTO hostData(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,hostId) VALUES(?,?,?,?,?,?,?,?)';
+            let  addSqlParams = [timeStamp,host.allCpu,host.usedmem,host.loRead,host.loWrite,host.loSend,host.loReceive,1];
             connection.query(addSql,addSqlParams,function (err, result) {
                 if(err){
                     console.log('[INSERT ERROR] - ',err.message);
@@ -37,6 +39,9 @@ http.createServer(function (req, res) {
             res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
             res.end();
         });
+    }
+    if(req.method === 'GET'){
+
     }
 
 }).listen(8081);

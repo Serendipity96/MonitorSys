@@ -1,8 +1,10 @@
 
-var http = require('http');
-var mysql  = require('mysql');
+let http = require('http');
+let mysql  = require('mysql');
+const url = require('url');
+let getHostParam = require('../getHostParam');
 
-var connection = mysql.createConnection({
+let connection = mysql.createConnection({
     host     : 'localhost',
     user     : 'root',
     password : '',
@@ -14,7 +16,6 @@ connection.connect();
 http.createServer(function (req, res) {
     if(req.method === 'POST'){
         req.on('data', chunk => {
-
             //处理数据
             let data = JSON.parse(chunk)
             // console.log(data);
@@ -40,11 +41,16 @@ http.createServer(function (req, res) {
             res.end();
         });
     }
-    if(req.method === 'GET'){
-
+    if(url.parse(req.url).path === '/getHostParam'){
+        getHostParam(1, 1, 1, 1).then((j)=>{
+            console.log(j)
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.write(JSON.stringify(j))
+        })
     }
 
 }).listen(8081);
+
 
 
 

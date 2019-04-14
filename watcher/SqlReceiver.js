@@ -22,6 +22,8 @@ class SqlReceiver {
 
         let _this = this;
         let output = {};
+        let timeStamp = (Math.round(new Date().getTime()/1000))
+        output["timeStamp"] = timeStamp
         let p = new Promise(function (resolve) {
             _this.connection.query(_this.selectSql, function (err, result) {
                 if (err) {
@@ -32,8 +34,8 @@ class SqlReceiver {
                     let r = result[i];
                     output[r.Variable_name] = r.Value
                 }
+
                 resolve(output)
-                // _this.connection.release()
             });
         });
         return p
@@ -45,8 +47,5 @@ class SqlReceiver {
 }
 
 exports.SqlReceiver = SqlReceiver;
-// let s = new SqlReceiver()
-// console.log(s.receive())
-// s.receive();
 
 

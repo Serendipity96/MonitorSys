@@ -1,17 +1,11 @@
-
 let http = require('http');
-let mysql  = require('mysql');
 const url = require('url');
 let getHostParam = require('../getHostParam');
+let {SQL} = require('../sql');
 
-let connection = mysql.createConnection({
-    host     : 'localhost',
-    user     : 'root',
-    password : '',
-    port: '3306',
-    database: 'test'
-});
-connection.connect();
+let sql = new SQL()
+sql.connect()
+
 
 http.createServer(function (req, res) {
     if(req.method === 'POST'){
@@ -21,31 +15,23 @@ http.createServer(function (req, res) {
             // console.log(data);
             let host = data["host"]
 
-            // hostiId 假设为1
-            let timeStamp = (Math.round(new Date().getTime()/1000))
+            let hostId = 1
             let  addSql = 'INSERT INTO hostData(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,hostId) VALUES(?,?,?,?,?,?,?,?)';
-            let  addSqlParams = [timeStamp,host.allCpu,host.usedmem,host.loRead,host.loWrite,host.loSend,host.loReceive,1];
-            connection.query(addSql,addSqlParams,function (err, result) {
-                if(err){
-                    console.log('[INSERT ERROR] - ',err.message);
-                    return;
-                }
-                console.log('success')
-            });
-
+            let  addSqlParams = [host.timeStamp,host.allCpu,host.usedmem,host.loRead,host.loWrite,host.loSend,host.loReceive,hostId];
+            sql.add(addSql,addSqlParams)
         });
-
-
         req.on('end', () => {
             res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
             res.end();
         });
     }
     if(url.parse(req.url).path === '/getHostParam'){
-        getHostParam(1, 1, 1, 1).then((j)=>{
-            console.log(j)
+        // 时间粒度60  1min = 60s
+        getHostParam(1554964655, 1555228961, 60, 1).then((j)=>{
             res.setHeader("Access-Control-Allow-Origin", "*");
             res.write(JSON.stringify(j))
+            console.log(JSON.stringify(j))
+            res.end()
         })
     }
 

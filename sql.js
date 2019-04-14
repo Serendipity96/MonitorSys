@@ -15,7 +15,7 @@ class SQL{
         this.connection.connect();
     }
     add(addSql,addSqlParams){
-        this.connection.query(addSql,addSqlParams,function (err, result) {
+        this.connection.query(addSql,addSqlParams,function (err) {
             if(err){
                 console.log('[INSERT ERROR] - ',err.message);
                 return;

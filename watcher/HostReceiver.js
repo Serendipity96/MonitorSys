@@ -16,7 +16,8 @@ class HostReceiver {
     }
 
     receive() {
-
+        let timeStamp = (Math.round(new Date().getTime()/1000))
+        this.output["timeStamp"] = timeStamp
         // 计算机内存使用
         let totalmem = os.totalmem() / (1024 * 1024 * 1024)
         let freemem = os.freemem() / (1024 * 1024 * 1024)

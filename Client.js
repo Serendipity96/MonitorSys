@@ -2,7 +2,8 @@ const http = require('http')
 
 function clientPostData(data) {
     const options = {
-        hostname: 'localhost',
+        hostname: '127.0.0.1',
+        path:'/postData',
         port: 8081,
         method: 'POST',
         headers: {

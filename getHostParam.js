@@ -44,7 +44,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
                 let calNetSend = []
                 let calNetReceive = []
 
-                let count = Math.floor(data[0]['count(*)'] / 60)
+                let count = Math.floor(data[0]['count(*)'] / 10)
                 for (let i = 0; i < count; i++) {
                     let sumCpu = 0
                     let sumMemory = 0

@@ -32,6 +32,7 @@ class SqlReceiver {
                     console.log('[SELECT ERROR] - ', err.message);
                     return;
                 }
+
                 for (let i = 0; i < result.length; i++) {
                     let r = result[i];
                     output[r.Variable_name] = r.Value

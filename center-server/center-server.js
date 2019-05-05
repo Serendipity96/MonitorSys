@@ -8,8 +8,8 @@ sql.connect()
 
 
 http.createServer(function (req, res) {
-    if(url.parse(req.url).path === '/getHostParam'){
-        if (req.method === "POST"  ) {
+    if (url.parse(req.url).path === '/getHostParam') {
+        if (req.method === "POST") {
 
             let data = {}
             req.on('data', function (chunk) {
@@ -27,7 +27,7 @@ http.createServer(function (req, res) {
                     })
             })
         }
-    }else if(url.parse(req.url).path === '/postData'){
+    } else if (url.parse(req.url).path === '/postData') {
         // post 插入数据用
 
         if (req.method === 'POST') {
@@ -36,10 +36,10 @@ http.createServer(function (req, res) {
                 //处理数据
                 let data = JSON.parse(chunk)
                 let host = data["host"]
-
+                let sqlData = data["sql"]
                 let id = data.id
-                let addSql = 'INSERT INTO hostData(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,hostId) VALUES(?,?,?,?,?,?,?,?)';
-                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id];
+                let addSql = 'INSERT INTO hostData(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
+                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections,sqlData.Com_commit,sqlData.Com_rollback];
                 sql.add(addSql, addSqlParams)
             });
             req.on('end', () => {
@@ -50,10 +50,7 @@ http.createServer(function (req, res) {
     }
 
 
-
-
-
-}).listen(8081);
+}).listen(8081,"0.0.0.0");
 
 
 

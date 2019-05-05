@@ -34,8 +34,6 @@ class ReceiverTicker {
                     output[v.name] = v.result
                 })
             }).then(()=>{
-                console.log("修改加了id的output：\n")
-                console.log(output)
                 PostDataToCenter(output)
             })
 

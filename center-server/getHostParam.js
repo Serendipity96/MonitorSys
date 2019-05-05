@@ -3,18 +3,18 @@ let {SQL} = require('./sql');
 function getHostParam(timeStart, timeEnd, timeGran, hostId) {
     let sql = new SQL()
     sql.connect()
-    let selectSql = 'select cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive\n' +
+    let selectSql = 'select timeStamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive\n' +
         'from hostData\n' +
         'where hostId =' + hostId + ' and timeStamp >=' + timeStart +
         '  and timeStamp <=' + timeEnd
 
+    let timeStp = []
     let cpu = []
     let memory = []
     let ioRead = []
     let ioWrite = []
     let netSend = []
     let netReceive = []
-    let data = {}
 
     let countSql = 'select count(*) from hostData where timeStamp>=' + timeStart + ' and timeStamp<=' + timeEnd
 
@@ -30,6 +30,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
 
             sql.query(selectSql, result => {
                 result.forEach((i) => {
+                    timeStp.push(i.timeStamp)
                     cpu.push(i.cpuUsed)
                     memory.push(i.memoryUsed)
                     ioRead.push(i.ioRead)
@@ -37,6 +38,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
                     netSend.push(i.netSend)
                     netReceive.push(i.netReceive)
                 })
+                let calTimeStamp = []
                 let calCpu = []
                 let calMemory = []
                 let calIoRead = []
@@ -46,6 +48,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
 
                 let count = Math.floor(data[0]['count(*)'] / 10)
                 for (let i = 0; i < count; i++) {
+                    let sumCalTimeStamp = 0
                     let sumCpu = 0
                     let sumMemory = 0
                     let sumIoRead = 0
@@ -53,6 +56,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
                     let sumNetSend = 0
                     let sumNetReceive = 0
                     for (let k = i * timeGran; k < (1 + i) * timeGran; k++) {
+                        sumCalTimeStamp += timeStp[k]
                         sumCpu += cpu[k]
                         sumMemory += memory[k]
                         sumIoRead += ioRead[k]
@@ -60,6 +64,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
                         sumNetSend += netSend[k]
                         sumNetReceive += netReceive[k]
                     }
+                    calTimeStamp.push(Number((sumCalTimeStamp / timeGran).toFixed(2)))
                     calCpu.push(Number((sumCpu / timeGran).toFixed(2)))
                     calMemory.push(Number((sumMemory / timeGran).toFixed(2)))
                     calIoRead.push(Number((sumIoRead / timeGran).toFixed(2)))
@@ -69,6 +74,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
                 }
 
                 data = {
+                    "timeStamp":calTimeStamp,
                     "cpu": calCpu,
                     "memory": calMemory,
                     "ioRead": calIoRead,

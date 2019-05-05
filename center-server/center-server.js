@@ -1,7 +1,7 @@
 let http = require('http');
 const url = require('url');
-let getHostParam = require('../getHostParam');
-let {SQL} = require('../sql');
+let getHostParam = require('./getHostParam');
+let {SQL} = require('./sql');
 
 let sql = new SQL()
 sql.connect()
@@ -37,9 +37,9 @@ http.createServer(function (req, res) {
                 let data = JSON.parse(chunk)
                 let host = data["host"]
 
-                let hostId = 1
+                let id = data.id
                 let addSql = 'INSERT INTO hostData(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,hostId) VALUES(?,?,?,?,?,?,?,?)';
-                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, hostId];
+                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id];
                 sql.add(addSql, addSqlParams)
             });
             req.on('end', () => {

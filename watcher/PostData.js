@@ -1,10 +1,11 @@
 const http = require('http')
+const watcherConfig = require('./watcherConfig')
 
-function clientPostData(data) {
+function PostData(data) {
     const options = {
-        hostname: '127.0.0.1',
-        path:'/postData',
-        port: 8081,
+        hostname: watcherConfig.clientPostDataHost,
+        path:watcherConfig.clientPostDataPath,
+        port: watcherConfig.clientPostDataPort,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -24,4 +25,4 @@ function clientPostData(data) {
     req.end();
 
 }
-module.exports = clientPostData;
+module.exports = PostData;

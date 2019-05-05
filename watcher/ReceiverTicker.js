@@ -1,6 +1,7 @@
-let {HostReceiver} = require('./watcher/HostReceiver');
-let {SqlReceiver} = require('./watcher/SqlReceiver');
-let clientPostData = require('./Client');
+let {HostReceiver} = require('./Receivers/HostReceiver');
+let {SqlReceiver} = require('./Receivers/SqlReceiver');
+let {IdReceiver} = require('./Receivers/IdReceiver');
+let PostDataToCenter = require('./PostData');
 
 class ReceiverTicker {
     constructor() {
@@ -33,7 +34,9 @@ class ReceiverTicker {
                     output[v.name] = v.result
                 })
             }).then(()=>{
-                clientPostData(output)
+                console.log("修改加了id的output：\n")
+                console.log(output)
+                PostDataToCenter(output)
             })
 
 
@@ -51,7 +54,9 @@ class ReceiverTicker {
 
 let h = new HostReceiver()
 let s = new SqlReceiver()
+let i = new IdReceiver()
 let r = new ReceiverTicker()
 r.addReceiver(h)
 r.addReceiver(s)
+r.addReceiver(i)
 r.tick(1000)

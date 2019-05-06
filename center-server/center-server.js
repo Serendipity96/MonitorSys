@@ -12,7 +12,7 @@ http.createServer(function (req, res) {
         if (req.method === "POST") {
 
             let data = {}
-            req.on('data', function (chunk) {
+            req.on( 'data', function (chunk) {
                 data = JSON.parse(chunk);
             });
 

@@ -10,13 +10,10 @@ sql.connect()
 http.createServer(function (req, res) {
     if (url.parse(req.url).path === '/getHostParam') {
         if (req.method === "POST") {
-
             let data = {}
             req.on( 'data', function (chunk) {
                 data = JSON.parse(chunk);
             });
-
-
             req.on('end', function () {
                 getHostParam(data.timeStart, data.timeEnd, data.timeGran, data.hostId)
                     .then((j) => {
@@ -28,17 +25,14 @@ http.createServer(function (req, res) {
             })
         }
     } else if (url.parse(req.url).path === '/postData') {
-        // post 插入数据用
-
         if (req.method === 'POST') {
-
             req.on('data', chunk => {
                 //处理数据
                 let data = JSON.parse(chunk)
                 let host = data["host"]
                 let sqlData = data["sql"]
                 let id = data.id
-                let addSql = 'INSERT INTO hostData(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
+                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
                 let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections,sqlData.Com_commit,sqlData.Com_rollback];
                 sql.add(addSql, addSqlParams)
             });
@@ -46,6 +40,18 @@ http.createServer(function (req, res) {
                 res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
                 res.end();
             });
+        }
+    }else if(url.parse(req.url).path === '/postRules'){
+        if(req.method === 'POST'){
+            req.on('data',chunk =>{
+                let data = JSON.parse(chunk)
+                console.log(data)
+            })
+            req.on('end',()=>{
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
+                res.end();
+            })
         }
     }
 

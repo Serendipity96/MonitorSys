@@ -1,0 +1,24 @@
+{
+  "name": "monitorsys",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Serendipity96/MonitorSys.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Serendipity96/MonitorSys/issues"
+  },
+  "homepage": "https://github.com/Serendipity96/MonitorSys#readme",
+  "dependencies": {
+    "disk-stat": "^1.0.4",
+    "mysql": "^2.17.1",
+    "net-stat": "^2.0.1"
+  }
+}

@@ -4,7 +4,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
     let sql = new SQL()
     sql.connect()
     let selectSql = 'select timeStamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,sqlConnections,Com_commit,Com_rollback\n' +
-        'from hostData\n' +
+        'from monitor_data\n' +
         'where id =' + hostId + ' and timeStamp >=' + timeStart +
         '  and timeStamp <=' + timeEnd
 
@@ -19,7 +19,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
     let sqlTPS = []
 
 
-    let countSql = 'select count(*) from hostData where timeStamp>=' + timeStart + ' and timeStamp<=' + timeEnd
+    let countSql = 'select count(*) from monitor_data where timeStamp>=' + timeStart + ' and timeStamp<=' + timeEnd
 
     let p = new Promise((resolve) => {
 

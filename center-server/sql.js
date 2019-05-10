@@ -7,7 +7,7 @@ class SQL{
             user: 'root',
             password: '',
             port: '3306',
-            database: 'test'
+            database: 'MonitorSys'
         });
 
     }

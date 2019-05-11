@@ -1,6 +1,7 @@
 let http = require('http');
 const url = require('url');
 let getHostParam = require('./getHostParam');
+let getRulesList = require('./getRulesList');
 let {SQL} = require('./sql');
 
 let sql = new SQL()
@@ -45,12 +46,32 @@ http.createServer(function (req, res) {
         if(req.method === 'POST'){
             req.on('data',chunk =>{
                 let data = JSON.parse(chunk)
-                console.log(data)
+                let machineId = data[0]
+                data.shift()
+                let ruleStr = JSON.stringify(data)
+                let addSql = 'INSERT INTO alarm_rules(machine_id,rule) VALUES(?,?)';
+                let addSqlParams = [machineId, ruleStr];
+                sql.add(addSql, addSqlParams)
             })
             req.on('end',()=>{
                 res.setHeader("Access-Control-Allow-Origin", "*");
                 res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
                 res.end();
+            })
+        }
+    }else if(url.parse(req.url).path === '/getRulesList'){
+        if (req.method === "GET") {
+            let data = {}
+            req.on( 'data', function (chunk) {
+                data = JSON.parse(chunk);
+            });
+            req.on('end', function () {
+                getRulesList()
+                    .then((j) => {
+                        res.setHeader("Access-Control-Allow-Origin", "*");
+                        res.write(JSON.stringify(j))
+                        res.end()
+                    })
             })
         }
     }

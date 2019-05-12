@@ -23,6 +23,15 @@ class SQL{
             console.log('success')
         });
     }
+    delete(deleteSql){
+        this.connection.query(deleteSql,function (err) {
+            if(err){
+                console.log('[INSERT ERROR] - ',err.message);
+                return;
+            }
+            console.log('success')
+        });
+    }
     query(querySql,callback){
         this.connection.query(querySql, function (err, result) {
             if (err) {

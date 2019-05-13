@@ -1,2 +1,3 @@
 node_modules
 .idea
+center-server/emailConfig.js

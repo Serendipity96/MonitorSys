@@ -19,6 +19,7 @@
   "dependencies": {
     "disk-stat": "^1.0.4",
     "mysql": "^2.17.1",
-    "net-stat": "^2.0.1"
+    "net-stat": "^2.0.1",
+    "nodemailer": "^6.1.1"
   }
 }

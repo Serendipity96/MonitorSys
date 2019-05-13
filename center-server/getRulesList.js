@@ -21,4 +21,3 @@ function getRulesList() {
 
 module.exports = getRulesList;
 
-getRulesList()

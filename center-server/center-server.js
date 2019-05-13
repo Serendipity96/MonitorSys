@@ -1,5 +1,6 @@
 let http = require('http');
 const url = require('url');
+const sendEmail = require('./sendEmail');
 let getHostParam = require('./getHostParam');
 let getRulesList = require('./getRulesList');
 let {SQL} = require('./sql');
@@ -64,8 +65,8 @@ http.createServer(function (req, res) {
                         if (rulesList[i].name === '0') {
                             if (rulesList[i].rule === '0') {
                                 if (host.allCpu > rulesList[i].num) {
-                                    console.log('规则' + rulesList[i].id)
-                                    console.log('cpu' + host.allCpu + '超出规定范围')
+                                    let reason= 'cpu使用率超出规定范围'
+                                    sendEmail(host.timeStamp,id,rulesList[i].id,reason)
                                 }
                             }
                         }

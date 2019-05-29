@@ -37,6 +37,7 @@ http.createServer(function (req, res) {
                 let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
                 let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback];
                 sql.add(addSql, addSqlParams)
+
                 let querySql = 'select * from alarm_rules where machine_id=' + id
                 sql.query(querySql, function (res) {
                     let rulesArr = []
@@ -52,12 +53,22 @@ http.createServer(function (req, res) {
                         if (tmp.length === 3) {
                             let strArr = tmp[0].split('')
                             let strArr2 = tmp[2].split('')
-                            rulesList.push({id:rulesId[i],name: strArr[strArr.length - 1], rule: tmp[1], num: strArr2[0]})
+                            rulesList.push({
+                                id: rulesId[i],
+                                name: strArr[strArr.length - 1],
+                                rule: tmp[1],
+                                num: strArr2[0]
+                            })
                         } else {
                             for (let j = 0; j < tmp.length / 3; j++) {
                                 let strArr = tmp[3 * j + 0].split('')
                                 let strArr2 = tmp[3 * j + 2].split('')
-                                rulesList.push({id:rulesId[i],name: strArr[strArr.length - 1], rule: tmp[3 * j + 1], num: strArr2[0]})
+                                rulesList.push({
+                                    id: rulesId[i],
+                                    name: strArr[strArr.length - 1],
+                                    rule: tmp[3 * j + 1],
+                                    num: strArr2[0]
+                                })
                             }
                         }
                     }
@@ -65,8 +76,8 @@ http.createServer(function (req, res) {
                         if (rulesList[i].name === '0') {
                             if (rulesList[i].rule === '0') {
                                 if (host.allCpu > rulesList[i].num) {
-                                    let reason= 'cpu使用率超出规定范围'
-                                    sendEmail(host.timeStamp,id,rulesList[i].id,reason)
+                                    let reason = 'cpu使用率超出规定范围'
+                                    sendEmail(host.timeStamp, id, rulesList[i].id, reason)
                                 }
                             }
                         }
@@ -132,6 +143,27 @@ http.createServer(function (req, res) {
                 res.end();
             })
         }
+    } else if (url.parse(req.url).path === '/getMachineList') {
+        // 获取机器列表
+        let data = ''
+        let p = new Promise(resolve => {
+            let getMachineList = 'select * from server'
+            sql.query(getMachineList, function (result) {
+                resolve(result)
+            })
+        })
+        // 探究nodejs数据流原理，如何优雅使用req.on('data',callback)
+        req.on('data', () => {
+        })
+        req.on('end', () => {
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            p.then((result) => {
+                data = JSON.stringify(result)
+                res.write(data)
+                res.end()
+            })
+        })
+
     }
 
 

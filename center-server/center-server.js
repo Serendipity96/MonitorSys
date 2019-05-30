@@ -4,6 +4,7 @@ const sendEmail = require('./sendEmail');
 let getHostParam = require('./getHostParam');
 let getRulesList = require('./getRulesList');
 let {SQL} = require('./sql');
+let {Rule} = require('./Rule');
 
 let sql = new SQL()
 sql.connect()
@@ -33,64 +34,31 @@ http.createServer(function (req, res) {
                 let data = JSON.parse(chunk)
                 let host = data["host"]
                 let sqlData = data["sql"]
+                console.log(host.allCpu)
                 let id = data.id
                 let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
                 let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback];
                 sql.add(addSql, addSqlParams)
-
-                let querySql = 'select * from alarm_rules where machine_id=' + id
-                sql.query(querySql, function (res) {
-                    let rulesArr = []
-                    let rulesId = []
-                    for (let i = 0; i < res.length; i++) {
-                        rulesId.push(res[i].rule_id)
-                        rulesArr.push(JSON.parse(res[i].rule))
-                    }
-                    let rulesList = []
-                    for (let i = 0; i < rulesArr.length; i++) {
-                        let ruleStr = JSON.stringify(rulesArr[i])
-                        let tmp = ruleStr.split(',')
-                        if (tmp.length === 3) {
-                            let strArr = tmp[0].split('')
-                            let strArr2 = tmp[2].split('')
-                            rulesList.push({
-                                id: rulesId[i],
-                                name: strArr[strArr.length - 1],
-                                rule: tmp[1],
-                                num: strArr2[0]
-                            })
-                        } else {
-                            for (let j = 0; j < tmp.length / 3; j++) {
-                                let strArr = tmp[3 * j + 0].split('')
-                                let strArr2 = tmp[3 * j + 2].split('')
-                                rulesList.push({
-                                    id: rulesId[i],
-                                    name: strArr[strArr.length - 1],
-                                    rule: tmp[3 * j + 1],
-                                    num: strArr2[0]
-                                })
-                            }
-                        }
-                    }
-                    for (let i = 0; i < rulesList.length; i++) {
-                        if (rulesList[i].name === '0') {
-                            if (rulesList[i].rule === '0') {
-                                if (host.allCpu > rulesList[i].num) {
-                                    let reason = 'cpu使用率超出规定范围'
-                                    sendEmail(host.timeStamp, id, rulesList[i].id, reason)
-                                }
-                            }
-                        }
-                        if (rulesList[i].name === '1') {
-                            if (rulesList[i].rule === '0') {
-                                if (host.usedmem > rulesList[i].num) {
-                                    console.log('规则' + rulesList[i].id)
-                                    console.log('内存' + host.usedmem + '超出规定范围')
-                                }
-                            }
-                        }
-                    }
+                let p = new Promise(resolve => {
+                    let querySql = 'select * from alarm_rules where machine_id=' + id
+                    sql.query(querySql, function (res) {
+                        resolve(res)
+                    })
                 })
+                p.then((res)=>{
+                    // 检测指标是否异常
+                    for (let i = 0; i < res.length; i++) {
+                        let r = new Rule(id,JSON.parse(res[i].rule))
+                        if(r.checkRule(host)){
+                            let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id) VALUES(?,?,?)';
+                            let addSqlParams = [host.timeStamp, res[i].rule_id, id];
+                            sql.add(addSql, addSqlParams)
+                            sendEmail(host.timeStamp,res[i].rule_id,id,r.toString())
+                        }
+                    }
+
+                })
+
             });
             req.on('end', () => {
                 res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
@@ -101,12 +69,13 @@ http.createServer(function (req, res) {
         if (req.method === 'POST') {
             req.on('data', chunk => {
                 let data = JSON.parse(chunk)
-                let machineId = data[0]
-                data.shift()
-                let ruleStr = JSON.stringify(data)
-                let addSql = 'INSERT INTO alarm_rules(machine_id,rule) VALUES(?,?)';
-                let addSqlParams = [machineId, ruleStr];
-                sql.add(addSql, addSqlParams)
+                console.log(data)
+                for (let i = 0; i < data.rules.length; i++) {
+                    let addSql = 'INSERT INTO alarm_rules(machine_id,rule) VALUES(?,?)';
+                    const ruleStr = JSON.stringify(data.rules[i])
+                    let addSqlParams = [data.id, ruleStr];
+                    sql.add(addSql, addSqlParams)
+                }
             })
             req.on('end', () => {
                 res.setHeader("Access-Control-Allow-Origin", "*");
@@ -116,20 +85,18 @@ http.createServer(function (req, res) {
         }
     } else if (url.parse(req.url).path === '/getRulesList') {
         if (req.method === "GET") {
-            let data = {}
-            req.on('data', function (chunk) {
-                data = JSON.parse(chunk);
+            req.on('data', function () {
             });
             req.on('end', function () {
                 getRulesList()
-                    .then((j) => {
+                    .then((result) => {
                         res.setHeader("Access-Control-Allow-Origin", "*");
-                        res.write(JSON.stringify(j))
+                        res.write(JSON.stringify(result))
                         res.end()
                     })
             })
         }
-    } else if (url.parse(req.url).path === '/deletRule') {
+    } else if (url.parse(req.url).path === '/deleteRule') {
         if (req.method === "POST") {
             req.on('data', chunk => {
                 let data = JSON.parse(chunk)

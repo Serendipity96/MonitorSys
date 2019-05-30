@@ -3,7 +3,7 @@ const config = require('./emailConfig')
 const formatTime = require('./formatTime')
 
 // async..await is not allowed in global scope, must use a wrapper
-function sendemail(timeStamp, machineId, ruleId, reason) {
+function sendemail(timeStamp,  ruleId, machineId,reason) {
     async function main() {
         // create reusable transporter object using the default SMTP transport
         let transporter = nodemailer.createTransport({

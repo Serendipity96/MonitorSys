@@ -3,6 +3,8 @@ const url = require('url');
 const sendEmail = require('./sendEmail');
 let getHostParam = require('./getHostParam');
 let getRulesList = require('./getRulesList');
+let formatTime = require('./formatTime');
+let formatLevel = require('./formatLevel');
 let {SQL} = require('./sql');
 let {Rule} = require('./Rule');
 
@@ -22,7 +24,6 @@ http.createServer(function (req, res) {
                     .then((j) => {
                         res.setHeader("Access-Control-Allow-Origin", "*");
                         res.write(JSON.stringify(j))
-                        console.log(JSON.stringify(j))
                         res.end()
                     })
             })
@@ -34,7 +35,6 @@ http.createServer(function (req, res) {
                 let data = JSON.parse(chunk)
                 let host = data["host"]
                 let sqlData = data["sql"]
-                console.log(host.allCpu)
                 let id = data.id
                 let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
                 let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback];
@@ -50,10 +50,11 @@ http.createServer(function (req, res) {
                     for (let i = 0; i < res.length; i++) {
                         let r = new Rule(id,JSON.parse(res[i].rule))
                         if(r.checkRule(host)){
-                            let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id) VALUES(?,?,?)';
-                            let addSqlParams = [host.timeStamp, res[i].rule_id, id];
+                            let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id,value) VALUES(?,?,?,?)';
+                            let value = r.getTypeValue(host)
+                            let addSqlParams = [host.timeStamp, res[i].rule_id, id,value];
                             sql.add(addSql, addSqlParams)
-                            sendEmail(host.timeStamp,res[i].rule_id,id,r.toString())
+                            // sendEmail(host.timeStamp,res[i].rule_id,id,r.toString())
                         }
                     }
 
@@ -69,11 +70,10 @@ http.createServer(function (req, res) {
         if (req.method === 'POST') {
             req.on('data', chunk => {
                 let data = JSON.parse(chunk)
-                console.log(data)
                 for (let i = 0; i < data.rules.length; i++) {
-                    let addSql = 'INSERT INTO alarm_rules(machine_id,rule) VALUES(?,?)';
+                    let addSql = 'INSERT INTO alarm_rules(machine_id,rule,level) VALUES(?,?,?)';
                     const ruleStr = JSON.stringify(data.rules[i])
-                    let addSqlParams = [data.id, ruleStr];
+                    let addSqlParams = [data.id, ruleStr,data.levels[i]];
                     sql.add(addSql, addSqlParams)
                 }
             })
@@ -100,7 +100,6 @@ http.createServer(function (req, res) {
         if (req.method === "POST") {
             req.on('data', chunk => {
                 let data = JSON.parse(chunk)
-                console.log(data)
                 let deleteSql = 'delete from alarm_rules where rule_id=' + data;
                 sql.delete(deleteSql)
             })
@@ -110,7 +109,34 @@ http.createServer(function (req, res) {
                 res.end();
             })
         }
-    } else if (url.parse(req.url).path === '/getMachineList') {
+    } else if(url.parse(req.url).path === '/getAlarmRecordList'){
+        if(req.method === 'GET'){
+            let p = new Promise(resolve => {
+                // 这里3个表连接查询
+                let selectSql = 'select s.ip_address,r.id,r.timestamp,r.value,r.is_solved,a.rule,a.level,a.machine_id from alarm_record as r inner join server as s on r.machine_id = s.id inner join alarm_rules as a on r.rule_id=a.rule_id;';
+                sql.query(selectSql, function (result) {
+                    resolve(result)
+                })
+            })
+            req.on('data', () => {
+
+            })
+            req.on('end', () => {
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                p.then((result) => {
+                    for (let i = 0; i < result.length; i++) {
+                        let r = new Rule(result[i].machine_id,JSON.parse(result[i].rule))
+                        result[i].rule = r.toString()
+                        result[i].timestamp = formatTime(result[i].timestamp)
+                        result[i].level = formatLevel(result[i].level)
+                    }
+                    res.write(JSON.stringify(result))
+                    res.end()
+                })
+            })
+        }
+    }
+    else if (url.parse(req.url).path === '/getMachineList') {
         // 获取机器列表
         let data = ''
         let p = new Promise(resolve => {

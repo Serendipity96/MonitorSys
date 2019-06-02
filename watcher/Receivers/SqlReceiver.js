@@ -11,11 +11,10 @@ class SqlReceiver {
             password: watcherConfig.sqlReceiverPwd,
             database: watcherConfig.sqlReceiverDatabase
         });
-        this.selectSql = "show  global  status  where variable_name in ('Questions','Com_commit','Com_rollback','Key_reads','Key_read_requests',\n" +
-            "                                              'Key_writes','Key_write_requests','innodb_buffer_pool_reads','innodb_buffer_pool_read_requests',\n" +
-            "                                              'Qcache_hits','Qcache_inserts','open_tables','opend_tables','Threads_created','Connections',\n" +
-            " 'Table_locks_waited','Table_locks_immediate')";
-
+        this.selectSql = "show  global  status  where variable_name in " +
+            "('Connections','Com_commit','Com_rollback'," +
+            "'Table_locks_immediate','Table_locks_waited'," +
+            "'key_reads','key_read_requests','key_writes','key_write_requests','Threads_created')";
         this.connection.connect();
     }
 

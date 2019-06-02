@@ -36,8 +36,8 @@ http.createServer(function (req, res) {
                 let host = data["host"]
                 let sqlData = data["sql"]
                 let id = data.id
-                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
-                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback];
+                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback,table_locks_immediate,table_locks_waited,key_reads,key_read_requests,key_writes,key_write_requests,threads_created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback,sqlData.Table_locks_immediate,sqlData.Table_locks_waited,sqlData.Key_reads,sqlData.Key_read_requests,sqlData.Key_writes,sqlData.Key_write_requests,sqlData.Threads_created];
                 sql.add(addSql, addSqlParams)
                 let p = new Promise(resolve => {
                     let querySql = 'select * from alarm_rules where machine_id=' + id

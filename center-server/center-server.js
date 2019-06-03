@@ -36,8 +36,8 @@ http.createServer(function (req, res) {
                 let host = data["host"]
                 let sqlData = data["sql"]
                 let id = data.id
-                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,sqlConnections,Com_commit,Com_rollback,table_locks_immediate,table_locks_waited,key_reads,key_read_requests,key_writes,key_write_requests,threads_created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback,sqlData.Table_locks_immediate,sqlData.Table_locks_waited,sqlData.Key_reads,sqlData.Key_read_requests,sqlData.Key_writes,sqlData.Key_write_requests,sqlData.Threads_created];
+                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,runtime,sqlConnections,Com_commit,Com_rollback,table_locks_immediate,table_locks_waited,key_reads,key_read_requests,key_writes,key_write_requests,threads_created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, host.runtime,sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback,sqlData.Table_locks_immediate,sqlData.Table_locks_waited,sqlData.Key_reads,sqlData.Key_read_requests,sqlData.Key_writes,sqlData.Key_write_requests,sqlData.Threads_created];
                 sql.add(addSql, addSqlParams)
                 let p = new Promise(resolve => {
                     let querySql = 'select * from alarm_rules where machine_id=' + id
@@ -156,7 +156,46 @@ http.createServer(function (req, res) {
                 res.end()
             })
         })
-
+    }
+    else if(url.parse(req.url).path === '/getTableList'){
+        let p = new Promise(resolve => {
+            let getTableList = 'select\n' +
+                '       s.ip_address,\n' +
+                '       m.timestamp,\n' +
+                '       m.id,\n' +
+                '       m.runtime,\n' +
+                '       m.netReceive,\n' +
+                '       m.netSend,\n' +
+                '       m.sqlConnections,\n' +
+                '       m.Com_commit,\n' +
+                '       m.Com_rollback\n' +
+                'from (select id, max(timestamp) as timestamp from monitor_data group by id) as c\n' +
+                '       inner join server as s on c.id = s.id\n' +
+                '       inner join monitor_data as m on c.id = m.id and c.timestamp = m.timestamp;'
+            sql.query(getTableList, function (result) {
+                resolve(result)
+            })
+        })
+        req.on('data', () => {
+        })
+        req.on('end', () => {
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            p.then((result) => {
+                let timestamp = Math.floor(new Date().getTime()/1000)
+                for (let i = 0; i < result.length; i++) {
+                    result[i]['runtime'] = Math.floor(result[i].runtime/86400)
+                    result[i]['tps'] = result[i].Com_commit+result[i].Com_rollback
+                    // 判断是否中断 5秒
+                    if (result[i].timestamp + 5 < timestamp) {
+                        result[i]['connectionFlag'] = '中断';
+                    } else {
+                        result[i]['connectionFlag'] = '成功';
+                    }
+                }
+                res.write(JSON.stringify(result))
+                res.end()
+            })
+        })
     }
 
 

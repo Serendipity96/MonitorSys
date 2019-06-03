@@ -1,6 +1,7 @@
 const os = require('os')
 const netStat = require('net-stat');
 const diskStat = require('disk-stat');
+const fs = require('fs');
 
 class HostReceiver {
 
@@ -16,7 +17,7 @@ class HostReceiver {
     }
 
     receive() {
-        let timeStamp = (Math.round(new Date().getTime()/1000))
+        let timeStamp = (Math.round(new Date().getTime() / 1000))
         this.output["timeStamp"] = timeStamp
         // 计算机内存使用
         let totalmem = os.totalmem() / (1024 * 1024 * 1024)
@@ -34,8 +35,8 @@ class HostReceiver {
         for (let i = 0; i < this.netKeys.length; i++) {
             let kR = this.netKeys[i] + "Receive"
             let kS = this.netKeys[i] + "Send"
-            this.output[kR] = ((netRawNew[this.netKeys[i]].bytes.receive - this.netRawOld[this.netKeys[i]].bytes.receive)/second).toFixed(2)
-            this.output[kS] = ((netRawNew[this.netKeys[i]].bytes.transmit - this.netRawOld[this.netKeys[i]].bytes.transmit)/second).toFixed(2)
+            this.output[kR] = ((netRawNew[this.netKeys[i]].bytes.receive - this.netRawOld[this.netKeys[i]].bytes.receive) / second).toFixed(2)
+            this.output[kS] = ((netRawNew[this.netKeys[i]].bytes.transmit - this.netRawOld[this.netKeys[i]].bytes.transmit) / second).toFixed(2)
         }
         // 磁盘IO
         // 单位 次/秒
@@ -43,8 +44,8 @@ class HostReceiver {
         for (let i = 0; i < this.diskKeys.length; i++) {
             let kR = this.netKeys[i] + "Read"
             let kS = this.netKeys[i] + "Write"
-            this.output[kR] = ((diskRawNew[this.diskKeys[i]].readsCompleted - this.diskRawOld[this.diskKeys[i]].readsCompleted)/second).toFixed(2)
-            this.output[kS] = ((diskRawNew[this.diskKeys[i]].writesCompleted - this.diskRawOld[this.diskKeys[i]].writesCompleted)/second).toFixed(2)
+            this.output[kR] = ((diskRawNew[this.diskKeys[i]].readsCompleted - this.diskRawOld[this.diskKeys[i]].readsCompleted) / second).toFixed(2)
+            this.output[kS] = ((diskRawNew[this.diskKeys[i]].writesCompleted - this.diskRawOld[this.diskKeys[i]].writesCompleted) / second).toFixed(2)
         }
         // CPU使用率
         // 单位 %
@@ -67,6 +68,9 @@ class HostReceiver {
         this.netRawOld = netRawNew
         this.diskRawOld = diskRawNew
         this.cpusOld = cpusNew
+        const time = fs.readFileSync('/proc/uptime').toString().split(' ')
+        this.output["runtime"] = Number(time[0])
+
         return Promise.resolve(this.output)
     }
 }

@@ -6,23 +6,27 @@ class Rule{
         this.value=rule.value;
         this.rule=rule;
     }
-    getTypeValue(host){
-        switch (this.typ) {
-            case "cpu":
-                return host.allCpu;
-            case "mem":
-                return host.usedmem;
-        }
+    getTypeValue(data){
+        let host = data['host']
+        let sqlData = data['sql']
+            switch (this.typ) {
+                case "cpu":
+                    return host.allCpu;
+                case "mem":
+                    return host.usedmem;
+                case "connection":
+                    return sqlData.Connections;
+            }
     }
 
-    checkRule(host){
+    checkRule(data){
         switch (this.op) {
             case ">":
-                return this.getTypeValue(host)>this.value;
+                return this.getTypeValue(data)>this.value;
             case "<":
-                return this.getTypeValue(host)<this.value;
+                return this.getTypeValue(data)<this.value;
             case "=":
-                return this.getTypeValue(host)===this.value;
+                return this.getTypeValue(data)===this.value;
         }
     }
 

@@ -3,8 +3,8 @@ let {SQL} = require('./sql');
 function getHostParam(timeStart, timeEnd, timeGran, hostId) {
     let sql = new SQL()
     sql.connect()
-    let selectSql = 'select timeStamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,sqlConnections,Com_commit,Com_rollback, \n' +
-        'table_locks_immediate,table_locks_waited,key_reads,key_read_requests,key_writes,key_write_requests,threads_created \n' +
+    let selectSql = 'select timeStamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,connections,tps, \n' +
+        'tableLocks,keyBufferRead,keyBufferWrite,threadCacheHit \n' +
         'from monitor_data\n' +
         'where id =' + hostId + ' and timeStamp >=' + timeStart +
         '  and timeStamp <=' + timeEnd
@@ -19,8 +19,8 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
     let sqlConnections = []
     let sqlTPS = []
     let tableLocks = []
-    let keyBufferReadNothits = []
-    let keyBufferWriteNothits = []
+    let keyBufferRead = []
+    let keyBufferWrite = []
     let threadCacheHit = []
 
 
@@ -47,28 +47,12 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
                     ioWrite.push(i.ioWrite)
                     netSend.push(i.netSend)
                     netReceive.push(i.netReceive)
-                    sqlConnections.push(i.sqlConnections)
-                    sqlTPS.push(i.Com_commit + i.Com_rollback)
-                    if(i.table_locks_waited !== 0){
-                        tableLocks.push(i.table_locks_immediate / i.table_locks_waited)
-                    }else{
-                        tableLocks.push(i.table_locks_immediate)
-                    }
-                    if(i.key_read_requests !== 0){
-                        keyBufferReadNothits.push(i.key_reads / i.key_read_requests)
-                    }else{
-                        keyBufferReadNothits.push(i.key_reads)
-                    }
-                    if(i.key_write_requests !== 0){
-                        keyBufferWriteNothits.push(i.key_writes / i.key_write_requests)
-                    }else{
-                        keyBufferWriteNothits.push(i.key_writes)
-                    }
-                    if(i.sqlConnections !== 0){
-                        threadCacheHit.push(1 - (i.threads_created / i.sqlConnections))
-                    }else{
-                        threadCacheHit.push(i.threads_created)
-                    }
+                    sqlConnections.push(i.connections)
+                    sqlTPS.push(i.tps)
+                    tableLocks.push(i.tableLocks)
+                    keyBufferRead.push(i.keyBufferRead)
+                    keyBufferWrite.push(i.keyBufferWrite)
+                    threadCacheHit.push(i.threadCacheHit)
                 })
 
                 let calTimeStamp = []
@@ -110,8 +94,8 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
                         sumSqlConnections += sqlConnections[k]
                         sumSqlTps += sqlTPS[k]
                         sumTableLocks += tableLocks[k]
-                        sumKeyBufferReadNothits += keyBufferReadNothits[k]
-                        sumKeyBufferWriteNothits += keyBufferWriteNothits[k]
+                        sumKeyBufferReadNothits += keyBufferRead[k]
+                        sumKeyBufferWriteNothits += keyBufferWrite[k]
                         sumThreadCacheHit += threadCacheHit[k]
                     }
 

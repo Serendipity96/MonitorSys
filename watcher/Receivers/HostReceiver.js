@@ -19,6 +19,8 @@ class HostReceiver {
     receive() {
         let timeStamp = (Math.round(new Date().getTime() / 1000))
         this.output["timeStamp"] = timeStamp
+        // 服务器1分钟平均负载
+        this.output["loadavg"] = Math.floor(os.loadavg()[0] * 100) / 100
         // 计算机内存使用
         let totalmem = os.totalmem() / (1024 * 1024 * 1024)
         let freemem = os.freemem() / (1024 * 1024 * 1024)

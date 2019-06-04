@@ -23,7 +23,7 @@ class SqlReceiver {
 
         let _this = this;
         let output = {};
-        let timeStamp = (Math.round(new Date().getTime()/1000))
+        let timeStamp = (Math.round(new Date().getTime() / 1000))
         output["timeStamp"] = timeStamp
         let p = new Promise(function (resolve) {
             _this.connection.query(_this.selectSql, function (err, result) {
@@ -34,16 +34,39 @@ class SqlReceiver {
 
                 for (let i = 0; i < result.length; i++) {
                     let r = result[i];
-                    output[r.Variable_name] = r.Value
+                    output[r.Variable_name] = Number(r.Value)
                 }
 
+                output["tps"] = output["Com_commit"] + output["Com_rollback"]
+                if (output['Table_locks_waited'] !== 0) {
+
+                    output['tableLocks'] = Math.floor(100*output['Table_locks_immediate'] / output['Table_locks_waited'])/100
+                } else {
+                    output['tableLocks'] = output['Table_locks_waited']
+                }
+
+                if (output['Key_read_requests'] !== 0) {
+                    output['keyBufferRead'] = Math.floor(100*output['Key_reads'] / output['Key_read_requests'])/100
+                } else {
+                    output['keyBufferRead'] = output['Key_reads']
+                }
+                if (output['Key_write_requests'] !== 0) {
+                    output['keyBufferWrite'] = Math.floor(100*output['Key_writes'] / output['Key_write_requests'])/100
+                } else {
+                    output['keyBufferWrite'] = output['Key_writes']
+                }
+                if (output['Connections'] !== 0) {
+                    output['threadCacheHit'] = Math.floor(100*(1 - (output['Threads_created'] / output['Connections'])))/100
+                } else {
+                    output['threadCacheHit'] = 1
+                }
                 resolve(output)
             });
         });
         return p
     }
 
-    end(){
+    end() {
         this.connection.end()
     }
 }

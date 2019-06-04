@@ -20,8 +20,17 @@ class SQL{
                 console.log('[INSERT ERROR] - ',err.message);
                 return;
             }
-            console.log('success')
+            console.log('success add')
         });
+    }
+    update(updateSql,updateParams){
+        this.connection.query(updateSql,updateParams,function (err) {
+            if(err){
+                console.log('[INSERT ERROR] - ',err.message);
+                return;
+            }
+            console.log('success update')
+        })
     }
     delete(deleteSql){
         this.connection.query(deleteSql,function (err) {
@@ -29,7 +38,7 @@ class SQL{
                 console.log('[INSERT ERROR] - ',err.message);
                 return;
             }
-            console.log('success')
+            console.log('success delete')
         });
     }
     query(querySql,callback){

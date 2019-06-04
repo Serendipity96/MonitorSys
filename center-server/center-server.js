@@ -1,10 +1,13 @@
 let http = require('http');
+const os = require('os')
 const url = require('url');
 const sendEmail = require('./sendEmail');
 let getHostParam = require('./getHostParam');
+let getLoadavg = require('./getLoadavg');
 let getRulesList = require('./getRulesList');
 let formatTime = require('./formatTime');
 let formatLevel = require('./formatLevel');
+let queryRecord = require('./queryRecord');
 let {SQL} = require('./sql');
 let {Rule} = require('./Rule');
 
@@ -28,6 +31,27 @@ http.createServer(function (req, res) {
                     })
             })
         }
+    } else if (url.parse(req.url).path === '/getHomepageUrl') {
+        req.on('data', () => {
+        })
+        req.on('end', () => {
+            let data = {}
+
+            queryRecord().then((result) => {
+                data['record'] = result
+                return data
+            }).then((data) => {
+                getLoadavg().then((result) => {
+                    data['loadavg'] = result
+                    res.setHeader("Access-Control-Allow-Origin", "*");
+                    res.write(JSON.stringify(data))
+                    res.end()
+                })
+
+
+            })
+
+        })
     } else if (url.parse(req.url).path === '/postData') {
         if (req.method === 'POST') {
             req.on('data', chunk => {
@@ -36,8 +60,8 @@ http.createServer(function (req, res) {
                 let host = data["host"]
                 let sqlData = data["sql"]
                 let id = data.id
-                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,runtime,sqlConnections,Com_commit,Com_rollback,table_locks_immediate,table_locks_waited,key_reads,key_read_requests,key_writes,key_write_requests,threads_created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, host.runtime,sqlData.Connections, sqlData.Com_commit, sqlData.Com_rollback,sqlData.Table_locks_immediate,sqlData.Table_locks_waited,sqlData.Key_reads,sqlData.Key_read_requests,sqlData.Key_writes,sqlData.Key_write_requests,sqlData.Threads_created];
+                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,runtime,loadavg,connections,tps,tableLocks,keyBufferRead,keyBufferWrite,threadCacheHit) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, host.runtime, host.loadavg, sqlData.Connections, sqlData.tps, sqlData.tableLocks, sqlData.keyBufferRead, sqlData.keyBufferWrite, sqlData.threadCacheHit];
                 sql.add(addSql, addSqlParams)
                 let p = new Promise(resolve => {
                     let querySql = 'select * from alarm_rules where machine_id=' + id
@@ -45,14 +69,14 @@ http.createServer(function (req, res) {
                         resolve(res)
                     })
                 })
-                p.then((res)=>{
+                p.then((res) => {
                     // 检测指标是否异常
                     for (let i = 0; i < res.length; i++) {
-                        let r = new Rule(id,JSON.parse(res[i].rule))
-                        if(r.checkRule(host)){
-                            let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id,value) VALUES(?,?,?,?)';
-                            let value = r.getTypeValue(host)
-                            let addSqlParams = [host.timeStamp, res[i].rule_id, id,value];
+                        let r = new Rule(id, JSON.parse(res[i].rule))
+                        if (r.checkRule(data)) {
+                            let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id,value,type,level) VALUES(?,?,?,?,?,?)';
+                            let value = r.getTypeValue(data)
+                            let addSqlParams = [host.timeStamp, res[i].rule_id, id, value, res[i].type, res[i].level];
                             sql.add(addSql, addSqlParams)
                             // sendEmail(host.timeStamp,res[i].rule_id,id,r.toString())
                         }
@@ -71,9 +95,9 @@ http.createServer(function (req, res) {
             req.on('data', chunk => {
                 let data = JSON.parse(chunk)
                 for (let i = 0; i < data.rules.length; i++) {
-                    let addSql = 'INSERT INTO alarm_rules(machine_id,rule,level) VALUES(?,?,?)';
+                    let addSql = 'INSERT INTO alarm_rules(machine_id,rule,level,type) VALUES(?,?,?,?)';
                     const ruleStr = JSON.stringify(data.rules[i])
-                    let addSqlParams = [data.id, ruleStr,data.levels[i]];
+                    let addSqlParams = [data.id, ruleStr, data.levels[i], data.ruleTypes[i]];
                     sql.add(addSql, addSqlParams)
                 }
             })
@@ -109,8 +133,8 @@ http.createServer(function (req, res) {
                 res.end();
             })
         }
-    } else if(url.parse(req.url).path === '/getAlarmRecordList'){
-        if(req.method === 'GET'){
+    } else if (url.parse(req.url).path === '/getAlarmRecordList') {
+        if (req.method === 'GET') {
             let p = new Promise(resolve => {
                 // 这里3个表连接查询
                 let selectSql = 'select s.ip_address,r.id,r.timestamp,r.value,r.is_solved,a.rule,a.level,a.machine_id from alarm_record as r inner join server as s on r.machine_id = s.id inner join alarm_rules as a on r.rule_id=a.rule_id;';
@@ -125,7 +149,7 @@ http.createServer(function (req, res) {
                 res.setHeader("Access-Control-Allow-Origin", "*");
                 p.then((result) => {
                     for (let i = 0; i < result.length; i++) {
-                        let r = new Rule(result[i].machine_id,JSON.parse(result[i].rule))
+                        let r = new Rule(result[i].machine_id, JSON.parse(result[i].rule))
                         result[i].rule = r.toString()
                         result[i].timestamp = formatTime(result[i].timestamp)
                         result[i].level = formatLevel(result[i].level)
@@ -135,8 +159,7 @@ http.createServer(function (req, res) {
                 })
             })
         }
-    }
-    else if (url.parse(req.url).path === '/getMachineList') {
+    } else if (url.parse(req.url).path === '/getMachineList') {
         // 获取机器列表
         let data = ''
         let p = new Promise(resolve => {
@@ -156,8 +179,7 @@ http.createServer(function (req, res) {
                 res.end()
             })
         })
-    }
-    else if(url.parse(req.url).path === '/getTableList'){
+    } else if (url.parse(req.url).path === '/getTableList') {
         let p = new Promise(resolve => {
             let getTableList = 'select\n' +
                 '       s.ip_address,\n' +
@@ -166,9 +188,8 @@ http.createServer(function (req, res) {
                 '       m.runtime,\n' +
                 '       m.netReceive,\n' +
                 '       m.netSend,\n' +
-                '       m.sqlConnections,\n' +
-                '       m.Com_commit,\n' +
-                '       m.Com_rollback\n' +
+                '       m.connections,\n' +
+                '       m.tps\n' +
                 'from (select id, max(timestamp) as timestamp from monitor_data group by id) as c\n' +
                 '       inner join server as s on c.id = s.id\n' +
                 '       inner join monitor_data as m on c.id = m.id and c.timestamp = m.timestamp;'
@@ -181,10 +202,9 @@ http.createServer(function (req, res) {
         req.on('end', () => {
             res.setHeader("Access-Control-Allow-Origin", "*");
             p.then((result) => {
-                let timestamp = Math.floor(new Date().getTime()/1000)
+                let timestamp = Math.floor(new Date().getTime() / 1000)
                 for (let i = 0; i < result.length; i++) {
-                    result[i]['runtime'] = Math.floor(result[i].runtime/86400)
-                    result[i]['tps'] = result[i].Com_commit+result[i].Com_rollback
+                    result[i]['runtime'] = Math.floor(result[i].runtime / 86400)
                     // 判断是否中断 5秒
                     if (result[i].timestamp + 5 < timestamp) {
                         result[i]['connectionFlag'] = '中断';
@@ -196,6 +216,20 @@ http.createServer(function (req, res) {
                 res.end()
             })
         })
+    } else if (url.parse(req.url).path === '/changeSolved') {
+        if (req.method === "POST") {
+            req.on('data', chunk => {
+                let data = JSON.parse(chunk)
+                let updateSql = 'update alarm_record set is_solved = ? where id=?';
+                let updateParams = [data.isSolved, data.id];
+                sql.update(updateSql, updateParams)
+            })
+            req.on('end', () => {
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
+                res.end();
+            })
+        }
     }
 
 

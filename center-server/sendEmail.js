@@ -1,9 +1,8 @@
 const nodemailer = require("nodemailer");
 const config = require('./emailConfig')
-const formatTime = require('./formatTime')
 
 // async..await is not allowed in global scope, must use a wrapper
-function sendemail(timeStamp,  ruleId, machineId,reason) {
+function sendemail(content, toEmail) {
     async function main() {
         // create reusable transporter object using the default SMTP transport
         let transporter = nodemailer.createTransport({
@@ -16,28 +15,30 @@ function sendemail(timeStamp,  ruleId, machineId,reason) {
             }
         });
 
-        let toEmail = 'ruofei.zhao@outlook.com'
-        let t = formatTime(timeStamp)
+        let html = "<table border=\"1\">\n" +
+            "  <tr>\n" +
+            "    <th>时间</th>\n" +
+            "    <th>机器</th>\n" +
+            "    <th>规则id</th>\n" +
+            "    <th>报警原因</th>\n" +
+            "  </tr>\n"
+        for (let i = 0; i < content.length; i++) {
+            html += "  <tr>\n" +
+                "    <td>" + content[i].time + "</td>\n" +
+                "    <td>" + content[i].machine_id + "</td>\n" +
+                "    <td>" + content[i].rule_id + "</td>\n" +
+                "    <td>" + content[i].reason + "</td>\n" +
+                "  </tr>\n"
+        }
+        html += "</table>\n"
+
         // send mail with defined transport object
         let info = await transporter.sendMail({
             from: '"数据监控中心" <' + config.authUser + '>', // sender address
             to: toEmail, // list of receivers
             subject: "数据库异常", // Subject line
             text: "数据库异常，请去查看", // plain text body
-            html: "<table border=\"1\">\n" +
-                "  <tr>\n" +
-                "    <th>时间</th>\n" +
-                "    <th>机器</th>\n" +
-                "    <th>规则id</th>\n" +
-                "    <th>报警原因</th>\n" +
-                "  </tr>\n" +
-                "  <tr>\n" +
-                "    <td>" + t + "</td>\n" +
-                "    <td>" + machineId + "</td>\n" +
-                "    <td>" + ruleId + "</td>\n" +
-                "    <td>" + reason + "</td>\n" +
-                "  </tr>\n" +
-                "</table>"
+            html: html
         });
     }
 

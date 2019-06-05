@@ -4,6 +4,7 @@ const url = require('url');
 const sendEmail = require('./sendEmail');
 let getHostParam = require('./getHostParam');
 let getLoadavg = require('./getLoadavg');
+let checkSendEmail = require('./checkSendEmail');
 let getRulesList = require('./getRulesList');
 let formatTime = require('./formatTime');
 let formatLevel = require('./formatLevel');
@@ -14,6 +15,7 @@ let {Rule} = require('./Rule');
 let sql = new SQL()
 sql.connect()
 
+checkSendEmail()
 
 http.createServer(function (req, res) {
     if (url.parse(req.url).path === '/getHostParam') {
@@ -36,21 +38,46 @@ http.createServer(function (req, res) {
         })
         req.on('end', () => {
             let data = {}
-
             queryRecord().then((result) => {
                 data['record'] = result
                 return data
             }).then((data) => {
                 getLoadavg().then((result) => {
-                    data['loadavg'] = result
+                    data['loadavgArr'] = result.loadavgArr
+                    data['loadAverage'] = result.loadAverage
+                    data['loadMax'] = result.loadMax
                     res.setHeader("Access-Control-Allow-Origin", "*");
                     res.write(JSON.stringify(data))
                     res.end()
                 })
-
-
             })
 
+        })
+    } else if (url.parse(req.url).path === '/postEmailReceiver') {
+        if (req.method === 'POST') {
+            let data = {}
+            req.on('data', chunk => {
+                data = JSON.parse(chunk);
+                let addSql = 'insert into notie_strategy(level, email_receiver) values(?,?) '
+                let addParams = [data.alarmLevel, data.emailReceiver]
+                sql.add(addSql, addParams)
+            });
+            req.on('end', () => {
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
+                res.end();
+            });
+        }
+    } else if (url.parse(req.url).path === '/getNoticeList') {
+        req.on('data', () => {
+        });
+        req.on('end', () => {
+            let selectSql = 'select * from notie_strategy'
+            sql.query(selectSql, function (result) {
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                res.write(JSON.stringify(result))
+                res.end()
+            })
         })
     } else if (url.parse(req.url).path === '/postData') {
         if (req.method === 'POST') {
@@ -74,10 +101,11 @@ http.createServer(function (req, res) {
                     for (let i = 0; i < res.length; i++) {
                         let r = new Rule(id, JSON.parse(res[i].rule))
                         if (r.checkRule(data)) {
-                            let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id,value,type,level) VALUES(?,?,?,?,?,?)';
+                            let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id,value,type,level,is_send_email) VALUES(?,?,?,?,?,?,?)';
                             let value = r.getTypeValue(data)
-                            let addSqlParams = [host.timeStamp, res[i].rule_id, id, value, res[i].type, res[i].level];
+                            let addSqlParams = [host.timeStamp, res[i].rule_id, id, value, res[i].type, res[i].level,0];
                             sql.add(addSql, addSqlParams)
+
                             // sendEmail(host.timeStamp,res[i].rule_id,id,r.toString())
                         }
                     }
@@ -133,7 +161,22 @@ http.createServer(function (req, res) {
                 res.end();
             })
         }
-    } else if (url.parse(req.url).path === '/getAlarmRecordList') {
+    }
+    else if(url.parse(req.url).path === '/deleteEmailReceive'){
+        if (req.method === "POST") {
+            req.on('data', chunk => {
+                let id = JSON.parse(chunk)
+                let deleteSql = 'delete from notie_strategy where id=' + id;
+                sql.delete(deleteSql)
+            })
+            req.on('end', () => {
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                res.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
+                res.end();
+            })
+        }
+    }
+    else if (url.parse(req.url).path === '/getAlarmRecordList') {
         if (req.method === 'GET') {
             let p = new Promise(resolve => {
                 // 这里3个表连接查询

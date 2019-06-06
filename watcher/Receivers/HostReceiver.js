@@ -26,7 +26,7 @@ class HostReceiver {
         let freemem = os.freemem() / (1024 * 1024 * 1024)
         let usedmem = totalmem - freemem
         // 单位 GB
-        // this.output["totalmem"] = totalmem.toFixed(1)
+        this.output["totalmem"] = totalmem.toFixed(1)
         // this.output["freemem"] = freemem.toFixed(1)
         this.output["usedmem"] = usedmem.toFixed(1)
 

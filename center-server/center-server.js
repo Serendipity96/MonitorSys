@@ -1,11 +1,13 @@
 let http = require('http');
 const os = require('os')
 const url = require('url');
-const sendEmail = require('./sendEmail');
 let getHostParam = require('./getHostParam');
 let getLoadavg = require('./getLoadavg');
+let queryConnection = require('./queryConnection');
+let queryMem = require('./queryMem');
 let checkSendEmail = require('./checkSendEmail');
 let getRulesList = require('./getRulesList');
+let onlineRate = require('./onlineRate');
 let formatTime = require('./formatTime');
 let formatLevel = require('./formatLevel');
 let queryRecord = require('./queryRecord');
@@ -46,9 +48,28 @@ http.createServer(function (req, res) {
                     data['loadavgArr'] = result.loadavgArr
                     data['loadAverage'] = result.loadAverage
                     data['loadMax'] = result.loadMax
-                    res.setHeader("Access-Control-Allow-Origin", "*");
-                    res.write(JSON.stringify(data))
-                    res.end()
+                    return data
+
+                }).then((data) => {
+                    onlineRate().then((result) => {
+                        data['onlineRate'] = result.onlineRate
+                        return data
+                    }).then((data) => {
+                        queryConnection().then((result) => {
+                            data['connection'] = result.connection
+                            data['maxConnection'] = result.connection
+                            return data
+                        }).then((data) => {
+                            queryMem().then((result) => {
+                                data['memTotal'] = result.memTotal
+                                data['memUsed'] = result.memUsed
+                                res.setHeader("Access-Control-Allow-Origin", "*");
+                                res.write(JSON.stringify(data))
+                                res.end()
+                            })
+                        })
+
+                    })
                 })
             })
 
@@ -87,8 +108,8 @@ http.createServer(function (req, res) {
                 let host = data["host"]
                 let sqlData = data["sql"]
                 let id = data.id
-                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,ioRead,ioWrite,netSend,netReceive,id,runtime,loadavg,connections,tps,tableLocks,keyBufferRead,keyBufferWrite,threadCacheHit) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, host.runtime, host.loadavg, sqlData.Connections, sqlData.tps, sqlData.tableLocks, sqlData.keyBufferRead, sqlData.keyBufferWrite, sqlData.threadCacheHit];
+                let addSql = 'INSERT INTO monitor_data(timestamp,cpuUsed,memoryUsed,memoryTotal,ioRead,ioWrite,netSend,netReceive,id,runtime,loadavg,connections,tps,tableLocks,keyBufferRead,keyBufferWrite,threadCacheHit) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+                let addSqlParams = [host.timeStamp, host.allCpu, host.usedmem, host.totalmem, host.loRead, host.loWrite, host.loSend, host.loReceive, id, host.runtime, host.loadavg, sqlData.Connections, sqlData.tps, sqlData.tableLocks, sqlData.keyBufferRead, sqlData.keyBufferWrite, sqlData.threadCacheHit];
                 sql.add(addSql, addSqlParams)
                 let p = new Promise(resolve => {
                     let querySql = 'select * from alarm_rules where machine_id=' + id
@@ -103,7 +124,7 @@ http.createServer(function (req, res) {
                         if (r.checkRule(data)) {
                             let addSql = 'INSERT INTO alarm_record(timestamp,rule_id,machine_id,value,type,level,is_send_email) VALUES(?,?,?,?,?,?,?)';
                             let value = r.getTypeValue(data)
-                            let addSqlParams = [host.timeStamp, res[i].rule_id, id, value, res[i].type, res[i].level,0];
+                            let addSqlParams = [host.timeStamp, res[i].rule_id, id, value, res[i].type, res[i].level, 0];
                             sql.add(addSql, addSqlParams)
 
                             // sendEmail(host.timeStamp,res[i].rule_id,id,r.toString())
@@ -161,8 +182,7 @@ http.createServer(function (req, res) {
                 res.end();
             })
         }
-    }
-    else if(url.parse(req.url).path === '/deleteEmailReceive'){
+    } else if (url.parse(req.url).path === '/deleteEmailReceive') {
         if (req.method === "POST") {
             req.on('data', chunk => {
                 let id = JSON.parse(chunk)
@@ -175,8 +195,7 @@ http.createServer(function (req, res) {
                 res.end();
             })
         }
-    }
-    else if (url.parse(req.url).path === '/getAlarmRecordList') {
+    } else if (url.parse(req.url).path === '/getAlarmRecordList') {
         if (req.method === 'GET') {
             let p = new Promise(resolve => {
                 // 这里3个表连接查询

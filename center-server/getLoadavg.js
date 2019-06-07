@@ -12,7 +12,7 @@ function getLoadavg() {
             machineCount = result[0].count
         })
         let endTime = new Date().getTime() / 1000
-        let startTime = endTime - 1800
+        let startTime = endTime - 600
         let data = {}
         let selectLoadavg = 'select loadavg from monitor_data where timestamp<=' + endTime + 'and timestamp >=' + startTime
         sql.query(selectLoadavg, function (result) {
@@ -25,6 +25,8 @@ function getLoadavg() {
                     max = result[i].loadavg
                 }
             }
+            console.log("平均负载数组长度")
+            console.log(result.length)
             data['loadAverage'] = Math.round(100 * sum / machineCount) / 100
             data['loadMax'] = max
             resolve(data)

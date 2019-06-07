@@ -46,11 +46,12 @@ function checkSendEmail() {
                             sendemail(normalRecords, result[i].email_receiver)
                         }
                     }
-
                 }
-                // 设置发送过的标志
-                console.log("五分钟")
             })
+            // 设置发送过的标志
+            let updateSql = 'UPDATE alarm_record SET is_send_email=? WHERE is_solved = 0'
+            let updateParams = [1];
+            sql.update(updateSql, updateParams)
         })
     }, 86400000)
     // 每天早上10点发一次未解决的旧报警数据汇总,每小时核对一下当前时间
@@ -99,6 +100,7 @@ function checkSendEmail() {
 
                         }
                     })
+
                 })
             }))
         }

@@ -6,9 +6,13 @@ function getLoadavg() {
     sql.connect()
 
     let promise = new Promise(resolve => {
+        let machineCount = 0
+        let selectCount = 'select count(*)as count from server '
+        sql.query(selectCount,function (result) {
+            machineCount = result[0].count
+        })
         let endTime = new Date().getTime() / 1000
-        let startTime = endTime - 86400
-
+        let startTime = endTime - 1800
         let data = {}
         let selectLoadavg = 'select loadavg from monitor_data where timestamp<=' + endTime + 'and timestamp >=' + startTime
         sql.query(selectLoadavg, function (result) {
@@ -17,11 +21,11 @@ function getLoadavg() {
             let max = 0
             for (let i = 0; i < result.length; i++) {
                 sum += result[i].loadavg
-                if (result[i] > max) {
-                    max = result[i]
+                if (result[i].loadavg > max) {
+                    max = result[i].loadavg
                 }
             }
-            data['loadAverage'] = Math.round(100 * sum / result.length) / 100
+            data['loadAverage'] = Math.round(100 * sum / machineCount) / 100
             data['loadMax'] = max
             resolve(data)
         })

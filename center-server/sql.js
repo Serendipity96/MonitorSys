@@ -17,7 +17,7 @@ class SQL{
     add(addSql,addSqlParams){
         this.connection.query(addSql,addSqlParams,function (err) {
             if(err){
-                console.log('[INSERT ERROR] - ',err.message);
+                console.log('[add ERROR] - ',err.message);
                 return;
             }
             console.log('success add')
@@ -26,7 +26,7 @@ class SQL{
     update(updateSql,updateParams){
         this.connection.query(updateSql,updateParams,function (err) {
             if(err){
-                console.log('[INSERT ERROR] - ',err.message);
+                console.log('[update ERROR] - ',err.message);
                 return;
             }
             console.log('success update')
@@ -35,7 +35,7 @@ class SQL{
     delete(deleteSql){
         this.connection.query(deleteSql,function (err) {
             if(err){
-                console.log('[INSERT ERROR] - ',err.message);
+                console.log('[delete ERROR] - ',err.message);
                 return;
             }
             console.log('success delete')
@@ -44,7 +44,7 @@ class SQL{
     query(querySql,callback){
         this.connection.query(querySql, function (err, result) {
             if (err) {
-                console.log('[SELECT ERROR] - ', err.message);
+                console.log('[query ERROR] - ', err.message);
                 return;
             }
             callback(result);

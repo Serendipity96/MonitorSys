@@ -16,11 +16,11 @@ function onlineRate() {
             let sum = 0
             let time = new Date().getTime() / 1000
             for (let i = 0; i < result.length; i++) {
-                if (result[i].timestamp + 5 > time) {
+                if (result[i].timestamp + 60 > time) {
                     sum += 1
                 }
             }
-            data['onlineRate'] = Math.round(sum / result.length)
+            data['onlineRate'] = Math.round(100* sum / result.length) /100 *100
             resolve(data)
         })
     })

@@ -27,6 +27,7 @@ http.createServer(function (req, res) {
                 data = JSON.parse(chunk);
             });
             req.on('end', function () {
+                console.log(data)
                 getHostParam(data.timeStart, data.timeEnd, data.timeGran, data.hostId)
                     .then((j) => {
                         res.setHeader("Access-Control-Allow-Origin", "*");
@@ -268,7 +269,7 @@ http.createServer(function (req, res) {
                 for (let i = 0; i < result.length; i++) {
                     result[i]['runtime'] = Math.floor(result[i].runtime / 86400)
                     // 判断是否中断 5秒
-                    if (result[i].timestamp + 5 < timestamp) {
+                    if (result[i].timestamp + 60 < timestamp) {
                         result[i]['connectionFlag'] = '中断';
                     } else {
                         result[i]['connectionFlag'] = '成功';

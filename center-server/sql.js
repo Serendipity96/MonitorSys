@@ -1,13 +1,14 @@
+const sqlConfig = require('./SQL_config')
 let mysql = require('mysql');
 
 class SQL{
     constructor(){
         this.connection = mysql.createConnection({
-            host: 'localhost',
-            user: 'root',
-            password: '',
-            port: '3306',
-            database: 'MonitorSys'
+            host: sqlConfig.host,
+            user: sqlConfig.user,
+            password: sqlConfig.password,
+            port: sqlConfig.port,
+            database: sqlConfig.database
         });
 
     }

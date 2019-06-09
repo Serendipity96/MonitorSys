@@ -60,7 +60,7 @@ function getHostParam(timeStart, timeEnd, timeGran, hostId) {
             let calKeyBufferWriteNothits = []
             let calThreadCacheHit = []
 
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < Math.floor(100*count/timeGran)/100; i++) {
                 let sumCalTimeStamp = 0
                 let sumCpu = 0
                 let sumMemory = 0

@@ -17,7 +17,7 @@ let {Rule} = require('./Rule');
 let sql = new SQL()
 sql.connect()
 
-checkSendEmail()
+// checkSendEmail()
 
 http.createServer(function (req, res) {
     if (url.parse(req.url).path === '/getHostParam') {
@@ -36,7 +36,8 @@ http.createServer(function (req, res) {
                     })
             })
         }
-    } else if (url.parse(req.url).path === '/getHomepageUrl') {
+    } else if (url.parse(req.url).path === '/getHomepage') {
+        console.log('getHomepageUrl')
         req.on('data', () => {
         })
         req.on('end', () => {
@@ -128,7 +129,6 @@ http.createServer(function (req, res) {
                             let addSqlParams = [host.timeStamp, res[i].rule_id, id, value, res[i].type, res[i].level, 0];
                             sql.add(addSql, addSqlParams)
 
-                            // sendEmail(host.timeStamp,res[i].rule_id,id,r.toString())
                         }
                     }
 

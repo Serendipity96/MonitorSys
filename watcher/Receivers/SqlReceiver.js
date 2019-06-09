@@ -39,7 +39,6 @@ class SqlReceiver {
 
                 output["tps"] = output["Com_commit"] + output["Com_rollback"]
                 if (output['Table_locks_waited'] !== 0) {
-
                     output['tableLocks'] = Math.floor(100*output['Table_locks_immediate'] / output['Table_locks_waited'])/100
                 } else {
                     output['tableLocks'] = output['Table_locks_waited']
